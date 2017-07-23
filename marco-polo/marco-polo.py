@@ -1,4 +1,6 @@
 #!/usr/bin/python
+import sys
+sys.stdout.flush()
 
 import random
 
@@ -22,7 +24,11 @@ class Traveler(object):
                  beast_load=0,
                  beast_capacity=0,
                  beast_sick=99,
-                 hunting=2):
+                 hunting=2,
+                 health=0,
+                 health_total=0,
+                 wound=0,
+                 wound_total=0):
         
         self.journey = journey
         self.distance = distance
@@ -91,10 +97,6 @@ def supplies_init(t):
     t.oil = oil
     t.jewels -= oil * 2
     t.beast_capacity -= oil
-    
-def resource_check(t):
-    """check for being out of jewels/clothes"""
-    pass
 
 def traveler_sick(t):
     """deal with sickness"""
@@ -108,10 +110,6 @@ def traveler_eat(t):
     """wherein the traveler consumes foodstuffs"""
     pass
 
-def events(t):
-    """special events"""
-    pass
-
 def traveler_heal(t):
     """deal with medicine"""
     pass
@@ -120,9 +118,42 @@ def resource_rebase(t):
     """ensure resources can't be negative"""
     pass
 
+def resource_verify(t):
+    """check for being out of jewels/clothes"""
+    if t.jewels < 15:
+        print("You have only {} jewels with which to barter.".output(t.jewels))
+        
+    if t.beasts < 3:
+        print("You push on with your {} camels.".output(t.beasts))
+    else:
+        a = input("Would you like to sell a camel? [y/n] ")
+        if verify_yes_no(a) == 'y':
+            sale = 8 + random.randint(1,9)
+            print("You get {} jewels for your best camel.".format(sale))
+            t.jewels += sale
+            t.beasts -= 1
+
+    if t.clothes < 1:
+        print("You should try and replace that tent you have been wearing as a")
+        print("robe. It is badly torn and the Tartars find it insulting.")
+        
+
 def resource_print(t):
     """print inventory"""
-    pass
+    headers1 = ["Sacks of", "", "", "Skins of", "Robes and", "Balms and", "Crossbow"]
+    headers2 = ["Jewels", "Camels", "Food", "Oil", "Sandals", "Unguents", "Arrows"]
+    inventory = [t.jewels, t.beasts, t.food, t.oil, t.clothes, t.medicines, t.weapons]
+    row_format ="{:<12}" * (len(headers1) + 1)
+    print row_format.format("", *headers1)
+    print row_format.format("", *headers2)
+    print row_format.format("", *inventory)
+
+def sick_verify(t):
+    t.health_total += t.health
+    t.health = 0
+    t.wound_total += t.wound
+    t.wound = 0
+    
 
 def date_print(t):
     """print date"""
@@ -138,10 +169,15 @@ def traveler_shoot(t):
     """shoot the crossbow"""
     pass
 
+def events(t):
+    """special events"""
+    pass
+
 def verify_yes_no(answer):
     answers = ['y','n','yes','no']
     while (answer.lower() not in answers):
         answer = input("Don't understand answer. Enter y/n please:")
+    return answer[0].lower()
 
 def verify_range(min, max, answer):
     response = ''
@@ -153,13 +189,19 @@ def verify_range(min, max, answer):
         answer = int(input("That is too {}. Try again:".format(response)))
     return answer
 
+def verify_continue():
+    foo = raw_input("\nPress ENTER to continue...")
+
 
 def end_status():
     pass
 
 def main():
     game = Traveler()
+    
     intro()
+    verify_continue()
+    
     hunting_init(game)
     supplies_init(game)
     while(game.total_distance < 6000):       
@@ -171,11 +213,15 @@ def main():
         print("You have traveled {} miles.".format(game.total_distance))
         
         # print inventory
-        print("Here is what you now have:")
+        print("Here is what you now have:\n")
+        resource_print(game)
+        verify_continue()
         
         # check for no jewels/clothes
+        resource_verify(game)
         
         # check for sickness
+        sick_verify(game)
         
         # recover camels
         
@@ -191,9 +237,6 @@ def main():
         
         # event check
     
-
-
-
 
 if __name__ == "__main__":
     main()
