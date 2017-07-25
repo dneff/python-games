@@ -10,9 +10,6 @@ months = ['March','May','July','September','November','January']
 class Traveler(object):
     """Represents user"""
     def __init__(self,
-                 journey=0,
-                 distance=0,
-                 total_distance=0,
                  jewels=300,
                  food=0,
                  oil=0,
@@ -24,27 +21,32 @@ class Traveler(object):
                  beast_load=0,
                  beast_capacity=0,
                  beast_sick=99,
-                 hunting=2,
-                 health=0,
-                 health_total=0,
-                 wound=0,
-                 wound_total=0):
+                 hunting=2):
         
-        self.journey = journey
-        self.distance = distance
-        self.total_distance = total_distance
+        self.journey = 0
+        self.distance = 0
+        self.total_distance = 0
+        self.food_status = 0
+        self.food_eaten = 0
+        self.food_eaten_last = 0
+        self.food_quality = 0
         self.jewels = jewels
         self.food = food
         self.oil = oil
         self.clothes = clothes
+        self.naked = False
         self.weapons = weapons
         self.medicines = medicines
-        self.beasts = beasts
+        self.beasts = 0
         self.beast_quality = beast_quality
         self.beast_load = beast_load
         self.beast_capacity = beast_capacity        
         self.beast_sick = beast_sick
         self.hunting = hunting
+        self.health = 0
+        self.health_total = 0
+        self.wound = 0
+        self.wound_total = 0
      
 def intro():
     print("WELCOME\n".center(80))
@@ -104,12 +106,39 @@ def traveler_sick(t):
 
 def traveler_barter(t):
     """barter for supplies"""
-    pass
+    barter = input("You have {} jewels. Do you want to barter here? [y/n] ".format(t.jewels))
+    if verify_yes_no(barter) == 'y':
+        camel_price   = random.randint(1,8) + 17
+        food_price    = random.randint(1,4) + 2
+        oil_price     = random.randint(1,4) + 2
+        clothes_price = random.randint(1,8) + 8
+        balm_price    = 2
+        arrow_count   = random.randint(1,6) + 6
+
     
 def traveler_eat(t):
     """wherein the traveler consumes foodstuffs"""
     pass
 
+def traveler_naked(t):
+    """out of clothes"""
+    print("You were warned about getting more modest clothes.")
+    print("Futhermore, your sandals are in shreds.")
+    if t.naked:
+        print("Word has been received about your disreputable appearance.")
+        print("The people are not willing to deal with you and they")
+    else:
+        print("The Tartars chase you from town and")
+        
+    if random.randint(1,100) > 20:
+        print("warn you not to return...")
+        t.naked = True
+    else:
+        print("stone you. You are badly wounded and vow to get new")
+        print("clothes as soon as possible.")
+        t.naked = True
+        t.wound = 1.5
+        
 def traveler_heal(t):
     """deal with medicine"""
     pass
@@ -126,7 +155,7 @@ def resource_verify(t):
     if t.beasts < 3:
         print("You push on with your {} camels.".output(t.beasts))
     else:
-        a = input("Would you like to sell a camel? [y/n] ")
+        a = raw_input("Would you like to sell a camel? [y/n] ")
         if verify_yes_no(a) == 'y':
             sale = 8 + random.randint(1,9)
             print("You get {} jewels for your best camel.".format(sale))
@@ -153,7 +182,31 @@ def sick_verify(t):
     t.health = 0
     t.wound_total += t.wound
     t.wound = 0
-    
+    if t.food_eaten == 3:
+        t.food_status += .4
+    if t.health_total + t.wound_total + t.food_status < 3: return
+    if random.randint(1,100) > 70: return
+    print("As a result of sickness, injuries, and poor eating, you  must stop")
+    print("and regain your health. You trade a few tools to stay in a hut.")
+    lag = random.randint(1,100) % 6
+    if lag > 5:
+        print("You stay for {} months but grow weaker and finally pass away.".format(lag))
+        t.journey += lag
+        end_status(t)
+    print("You grow steadily stronger, but it is {} months until you are".format(lag * 2))
+    print("again fit to travel.")
+    t.health_total = 0
+    t.wound_total = 0
+    t.food_status = 0
+    t.journey += lag
+    t.medicines = t.medicines//2
+    t.food = t.food//2
+    if t.food < 3:
+        t.food = 3
+    if t.jewels > 20:
+        t.jewels -= 10
+    else:
+        t.jewels = t.jewels//2
 
 def date_print(t):
     """print date"""
@@ -190,7 +243,8 @@ def verify_range(min, max, answer):
     return answer
 
 def verify_continue():
-    foo = raw_input("\nPress ENTER to continue...")
+    raw_input("\nPress ENTER to continue...")
+    pass
 
 
 def end_status():
@@ -224,11 +278,19 @@ def main():
         sick_verify(game)
         
         # recover camels
+        if game.beast_sick == game.journey:
+            game.beast_sick = 99
+            game.beast_load = game.beasts
+            game.beast_quality += 1
         
         # barter for supplies
+        if game.journey > 1 and game.jewels > 1:
+            traveler_barter(game)
         
         # no clothes penalty
-        
+        if game.clothes < 0:
+            traveler_naked(game)
+            
         # eat
         
         # hunting check
