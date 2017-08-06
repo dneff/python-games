@@ -245,10 +245,6 @@ def traveler_heal(t):
     """deal with medicine"""
     pass
 
-def traveler_sick(t):
-    """deal with sickness"""
-    pass
-
 def resource_rebase(t):
     """ensure resources can't be negative"""
     if t.jewels    < 0: t.jewels = 0
@@ -325,10 +321,6 @@ def date_print(t):
     month = months[t.journey % 6]
     print("Date: {} {}".format(month, year))
 
-def event_check():
-    """read event probabilities"""
-    pass
-
 def traveler_shoot(t):
     """shoot the crossbow"""
     shooting_words = ["BANG", "POW", "THWACK", "ZING"]
@@ -369,35 +361,132 @@ def events(t):
     event = map_events[bisect.bisect(event_odds, random.randint(1,100))]
     if event == 'camel_hurt':
         print("A camel injured its leg.")
+        camel_eval(t)
     elif event == 'camel_sick':
         print("One of your camels is very sick and can't carry its full load.")
+        camel_eval(t)
     elif event == 'camel_wander':
         print("Two camels wander off. You finally find them after several days.")
+        t.distance -= 20
     elif event == 'bad_water':
         print("Long stretch with bad water. You spend time looking for clean wells.")
+        t.distance -= 50
     elif event == 'lost':
         print("You get lost trying to find an easier route.")
+        t.distance -= 100
     elif event == 'rains':
         print("Heavy rains completely wash away the route.")
+        t.distance -= 90
     elif event == 'food_rotten' and t.desert == False:
         print("Some of your food rots in humid weather.")
+        t.food -= 1
     elif event == 'food_stolen':
         print("Marauding animals got into your food supply.")
+        t.food -= 1
     elif event == 'fire':
         print("A fire flares up and destroys some of your food and clothes.")
+        t.food -= 1
+        t.clothes -= 1
+        if t.oil > 1:
+            t.oil -= 1
     elif event == 'burn' and t.desert == True:
         print("You get a nasty burn from an oil fire.")
+        t.wound = 5
     elif event == 'storms':
         print("High winds, sand storms and ferocious heat slow you down.")
+        t.distance -= 70
     elif event == 'infection':
         print("A gash in your leg looks infected. It hurts like the blazes.")
+        t.wound = .5
+        traveler_heal(t)
     elif event == 'clothing_tear':
         print("Jagged rocks tear your sandals and clothing. You'll need replacements soon.")
+        t.clothes -= 1
+        t.distance -= 30
     elif event == 'sick':
         print("All of you have horrible stomach cramps and intestinal disorder.")
+        t.distance -= 275
     elif event == 'bandits':
         print("Bloodthirsty bandits are attacking your caravan!")
-    
+        bandits_eval(t)
+
+def camel_eval(t):
+    print("Do you want to:")
+    print("\t1: Nurse it along")
+    print("\t2: Abandon it")
+    print("\t3: Sell it")
+    fate = verify_input("?", 'int')
+    fate = verify_range(1,3,fate)
+    if fate == 1:
+        t.beast_sick = t.journey + 2
+    elif fate == 2:
+        print("You kill the camel for food.")
+        t.beasts -= 1
+        t.food += 3
+        t.beast_capacity = 3 * t.beast_load - t.food - t.oil
+        print("You get the equivalent of 3 sacks of food.")
+    elif fate == 3:
+        t.beasts -= 1
+        t.jewels += 10
+        print("It is a poor beast and you only get 10 jewels for it.")
+    # load check
+    t.beast_load = t.beasts
+    if t.beast_sick <= t.jewels:
+        t.beast_load -= .6
+        t.beast_quality -= 1
+    if t.food + t.oil >= 3 * t.beast_load:
+        print("You have too large a load for your animals.")
+        excess = int(t.food + t.oil - 3 * t.beast_load - .9)
+        while(excess > 0):
+            print("You have to sell {} sacks of food or skins of oil.".format(excess))
+            food_sell = random.randint(1,excess)
+            oil_sell = excess - food_sell
+            wages = food_sell * 3 + oil_sell * 5
+            t.oil -= oil_sell
+            t.food -= food_sell
+            t.jewels += wages
+            print("You made {} from selling {} sacks of food and {} skins of oil.".format(wages, food_sell, oil_sell))
+            excess = int(t.food + t.oil - 3 * t.beast_load - .9)
+                            
+def bandits_eval(t):
+    print("You grab your crossbow...")
+    fatal = False
+    if t.weapons < 5:
+        print("You try to drive them off, but you run out of arrows.")
+        print("They grab some jewels and food.")
+        t.food -= 1
+        fatal = True
+    else:
+        shot = traveler_shoot(t)
+        if shot <= 1:
+            print("Wow! Sensational shooting!")
+        elif shot <= 3:
+            print("With practice you could shoot the crossbow, but most of your")
+            print("shots missed. An iron mace got you in the chest. They took some jewels.")
+            t.wound = 1
+            t.jewels -= 5
+            # TODO - use balm
+            t.weapons -= 3 + 2 * t.hunting
+            resource_verify(t)
+            return
+        else:
+            print("Better stick to trading. Your aim is terrible.")
+            fatal = True
+    if fatal == True:
+        if random.randint(1,100) > 20:
+            print("You caught a knife to the shoulder. That's going to take")
+            print("quite a while to heal.")
+            #TODO - use balm
+            t.wound = 2
+            t.jewels -= 10
+            t.weapons -= 4 + 2 * t.hunting
+        else:
+            print("They are savage, evil barbarians. They kill you and take")
+            print("your remaining camels and jewels.")
+            t.jewels = 0
+            t.beasts = 0
+            # TODO - go to end
+            exit(0)
     
 def desert(t):
     """in the desert?"""
