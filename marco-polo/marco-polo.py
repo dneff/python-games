@@ -243,7 +243,35 @@ def traveler_naked(t):
 
 def traveler_heal(t):
     """deal with medicine"""
-    pass
+    count = random.randint(1,3)
+    if t.medicines > count:
+        print("You use {} bottles of balm to heal your wounds.".format(count))
+        t.medicines -= count
+        return
+    else:
+        count -= t.medicines
+        t.medicines = 0
+        print("You need more balm to heal your wounds.")
+        print("Fortunately, you find some nomads willing to sell you")
+        print("Two bottles for 4 jewels each.")
+        if t.jewels > 8:
+            purchase = verify_input("Do you agree to buy them?", 'str')
+            purchase = verify_yes_no(purchase)
+            if purchase == 'y':
+                print("It works well and you're soon feeling better.")
+                t.jewels -= 8
+                t.medicines = 0
+                return
+        else:
+            print("Alas you don't have enough jewels to buy them.")
+    print("Your wound is badly infected.")
+    if(random.randint(1,100) <= 80):
+        print("but you push on to the next village.")
+    else:
+        print("but you keep going away.")
+        print("unfortunately, the strain is too much for you and, after weeks")
+        print("of agony, you succumb to your wounds and die in the wilderness.")
+        end_status(t)
 
 def resource_rebase(t):
     """ensure resources can't be negative"""
@@ -465,7 +493,7 @@ def bandits_eval(t):
             print("shots missed. An iron mace got you in the chest. They took some jewels.")
             t.wound = 1
             t.jewels -= 5
-            # TODO - use balm
+            traveler_heal(t)
             t.weapons -= 3 + 2 * t.hunting
             resource_verify(t)
             return
@@ -476,7 +504,7 @@ def bandits_eval(t):
         if random.randint(1,100) > 20:
             print("You caught a knife to the shoulder. That's going to take")
             print("quite a while to heal.")
-            #TODO - use balm
+            traveler_heal(t)
             t.wound = 2
             t.jewels -= 10
             t.weapons -= 4 + 2 * t.hunting
@@ -485,8 +513,7 @@ def bandits_eval(t):
             print("your remaining camels and jewels.")
             t.jewels = 0
             t.beasts = 0
-            # TODO - go to end
-            exit(0)
+            exit_status(t)
     
 def desert(t):
     """in the desert?"""
@@ -565,7 +592,14 @@ def verify_input(question, input_type):
     return unknown
 
 def end_status(t):
-    pass
+    t.journey += 1
+    resource_rebase(t)
+    date_print(t)
+    if t.total_distance < 6000:
+        print("Sorry you didn't make it.")
+    else:
+        print("Congratulations! You made it!")
+    sys.exit(0)
 
 def main():
     game = Traveler()
