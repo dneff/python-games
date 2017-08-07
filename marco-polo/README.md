@@ -4,9 +4,9 @@ First pass at converting a game from circa 1985 BASIC to Python.
 
 Observations in conversion:
 
-- important of input validation
+- importance of input validation
 - value of helper functions
-- challenge of capturing logic/mechanics using naked variable manipulation (is higher health good or bad?)
+- challenge of capturing logic/mechanics using naked variable manipulation (is higher `health` good or bad?)
 
 TODO:
 
